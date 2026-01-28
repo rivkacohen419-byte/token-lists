@@ -1,0 +1,41 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@2.1.1
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/repo
+    steps:
+      - checkout
+
+      # Restore pip cache (if any)
+      - restore_cache:
+          keys:
+            - pip-cache-{{ checksum "requirements.txt" }}
+            - pip-cache-
+
+      # Install dependencies
+      - run:
+          name: Install dependencies
+          command: |
+            python -m pip install --upgrade pip
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # Save pip cache for future runs
+      - save_cache:
+          paths:
+            - ~/.cache/pip
+          key: pip-cache-{{ checksum "requirements.txt" }}
+
+      # Run tests
+      - run:
+          name: Run tests
+          command: pytest -q
+
+workflows:
+  sample:
+    jobs:
+      - build-and-test
